@@ -1,9 +1,51 @@
+# ── bzlmod ────────────────────────────────────────────────────────────────────
 common --enable_bzlmod
 
+# ── Java toolchain ────────────────────────────────────────────────────────────
 build --java_language_version=21
 build --java_runtime_version=remotejdk_21
 build --tool_java_language_version=21
 build --tool_java_runtime_version=remotejdk_21
 
-# Keep sandboxes alive between builds for faster incremental rebuilds
+# ── Local caches ──────────────────────────────────────────────────────────────
+# Disk cache: persists across `bazel clean`, shared across workspaces on this machine.
+# Hit rate is high after the first build; subsequent builds skip re-compiling unchanged jars.
+build --disk_cache=~/.cache/bazel/disk-cache
+# Repo cache: avoids re-downloading Maven jars and Bazel modules on every machine bootstrap.
+build --repository_cache=~/.cache/bazel/repo-cache
+
+# ── Persistent workers ────────────────────────────────────────────────────────
+# Workers keep a JVM alive between Bazel invocations — the single biggest Java speedup.
+# JavaCompile is the Bazel 9 mnemonic; Javac covers older toolchain paths.
+build --strategy=JavaCompile=worker
+build --strategy=Javac=worker
+# Cap workers so they don't fight each other on a laptop; raise on CI.
+build --worker_max_instances=4
+# Reuse sandbox directories between actions to avoid redundant mkdir/symlink overhead.
 build --experimental_reuse_sandbox_directories
+
+# ── Parallelism ───────────────────────────────────────────────────────────────
+# Let Bazel use all available cores (default is HOST_CPUS, but be explicit).
+build --jobs=auto
+
+# ── Test ──────────────────────────────────────────────────────────────────────
+# Only re-run tests whose inputs changed; skip passing tests on rebuild.
+test --cache_test_results=yes
+# Print only failures by default; use --test_output=all to debug.
+test --test_output=errors
+
+# ── Remote cache / Build Event Service (BuildBuddy) ──────────────────────────
+# Uncomment and set your API key to enable when you're ready.
+# All other flags stay the same — nothing else needs changing.
+#
+# build:bb --remote_cache=grpcs://remote.buildbuddy.io
+# build:bb --remote_header=x-buildbuddy-api-key=<YOUR_API_KEY>
+# build:bb --remote_timeout=600
+# build:bb --remote_download_minimal
+#
+# build:bb --bes_backend=grpcs://remote.buildbuddy.io
+# build:bb --bes_results_url=https://app.buildbuddy.io/invocation/
+# build:bb --bes_header=x-buildbuddy-api-key=<YOUR_API_KEY>
+#
+# Usage: bazel build --config=bb //...
+#        bazel test  --config=bb //...

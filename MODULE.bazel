@@ -2,11 +2,12 @@ module(name = "monorepo", version = "0.0.0")
 
 bazel_dep(name = "rules_java",         version = "9.6.1")
 bazel_dep(name = "rules_jvm_external", version = "7.0")
+bazel_dep(name = "contrib_rules_jvm",  version = "0.33.0")
 
 maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
 maven.install(
     name = "maven",
-    known_contributing_modules = ["protobuf"],
+    known_contributing_modules = ["protobuf", "contrib_rules_jvm"],
     artifacts = [
         # Service runtime
         "org.jooq:jooq:3.19.15",
@@ -25,12 +26,12 @@ maven.install(
         "org.apache.logging.log4j:log4j-slf4j2-impl:2.23.1",
         "org.apache.logging.log4j:log4j-layout-template-json:2.23.1",
 
-        # JUnit 5 — test API (compile) + engine/reporting (runtime via junit5_runner)
+        # JUnit 5 — API for test classes; engine is runtime dep managed by contrib_rules_jvm runner
         "org.junit.jupiter:junit-jupiter-api:5.11.3",
         "org.junit.jupiter:junit-jupiter-engine:5.11.3",
-        "org.junit.platform:junit-platform-launcher:1.11.3",
-        "org.junit.platform:junit-platform-engine:1.11.3",
         "org.junit.platform:junit-platform-commons:1.11.3",
+        "org.junit.platform:junit-platform-engine:1.11.3",
+        "org.junit.platform:junit-platform-launcher:1.11.3",
         "org.junit.platform:junit-platform-reporting:1.11.3",
     ],
     repositories = ["https://repo1.maven.org/maven2"],

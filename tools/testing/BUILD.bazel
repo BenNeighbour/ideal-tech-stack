@@ -1,16 +1,1 @@
-load("@rules_java//java:defs.bzl", "java_library")
-
-java_library(
-    name = "junit5_runner",
-    srcs = ["Junit5Runner.java"],
-    deps = [
-        "@maven//:org_junit_platform_junit_platform_launcher",
-        "@maven//:org_junit_platform_junit_platform_engine",
-        "@maven//:org_junit_platform_junit_platform_reporting",
-    ],
-    runtime_deps = [
-        "@maven//:org_junit_jupiter_junit_jupiter_engine",
-        "@maven//:org_junit_platform_junit_platform_commons",
-    ],
-    visibility = ["//visibility:public"],
-)
+# Package marker — rules live in junit5.bzl

@@ -1,6 +1,6 @@
-"""JUnit 5 test macros for Bazel.
+"""java_tests: auto-discover and run JUnit 5 tests with Gradle-like experience.
 
-Preferred usage — zero BUILD edits when adding new test files:
+Usage in any service BUILD.bazel — this is the only declaration needed:
 
     load("//tools/testing:junit5.bzl", "java_tests")
 
@@ -9,56 +9,43 @@ Preferred usage — zero BUILD edits when adding new test files:
         deps = [":example_service_lib"],
     )
 
-Explicit usage (non-standard layouts, or when you need fine-grained control):
+Produces:
+  - :FooTest, :BarTest, …  — one target per class, individually cached and parallelised
+  - :tests                 — test_suite that runs all of them at once
 
-    load("//tools/testing:junit5.bzl", "junit5_test")
-
-    junit5_test(
-        name = "FooTest",
-        srcs = ["src/test/java/com/example/FooTest.java"],
-        test_class = "com.example.FooTest",
-        deps = [":example_service_lib"],
-    )
+Adding a new test file requires no BUILD changes.
 """
 
-load("@rules_java//java:defs.bzl", "java_test")
-
-def junit5_test(name, srcs, test_class, deps = [], size = "small", **kwargs):
-    """One junit5_test per test class. Results are cached and run in parallel by Bazel."""
-    java_test(
-        name = name,
-        srcs = srcs,
-        test_class = test_class,
-        use_testrunner = False,
-        main_class = "Junit5Runner",
-        args = [test_class],
-        size = size,
-        deps = deps + [
-            "//tools/testing:junit5_runner",
-            "@maven//:org_junit_jupiter_junit_jupiter_api",
-        ],
-        **kwargs
-    )
+load("@contrib_rules_jvm//java:defs.bzl", "java_junit5_test")
 
 def java_tests(srcs, deps = [], size = "small", **kwargs):
-    """Auto-create one junit5_test per file in srcs.
+    test_names = []
 
-    Class names are inferred from the standard Maven layout:
-      src/test/java/com/example/FooTest.java  →  com.example.FooTest
-
-    When a new test file is added to the glob, Bazel picks it up automatically —
-    no BUILD file changes needed.
-    """
     for src in srcs:
-        # Strip everything up to and including src/test/java/ to get the class path
+        # src/test/java/com/example/FooTest.java → com.example.FooTest / FooTest
         parts = src.split("src/test/java/")
         class_name = parts[-1].replace("/", ".").replace(".java", "")
         test_name = src.split("/")[-1].replace(".java", "")
-        junit5_test(
+        test_names.append(test_name)
+
+        java_junit5_test(
             name = test_name,
             srcs = [src],
             test_class = class_name,
-            deps = deps,
             size = size,
+            deps = deps + ["@maven//:org_junit_jupiter_junit_jupiter_api"],
+            runtime_deps = [
+                "@maven//:org_junit_jupiter_junit_jupiter_engine",
+                "@maven//:org_junit_platform_junit_platform_commons",
+                "@maven//:org_junit_platform_junit_platform_engine",
+                "@maven//:org_junit_platform_junit_platform_launcher",
+                "@maven//:org_junit_platform_junit_platform_reporting",
+            ],
             **kwargs
+        )
+
+    if test_names:
+        native.test_suite(
+            name = "tests",
+            tests = test_names,
         )
