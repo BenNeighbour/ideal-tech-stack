@@ -1,0 +1,38 @@
+module(name = "monorepo", version = "0.0.0")
+
+bazel_dep(name = "rules_java",         version = "9.6.1")
+bazel_dep(name = "rules_jvm_external", version = "7.0")
+
+maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
+maven.install(
+    name = "maven",
+    known_contributing_modules = ["protobuf"],
+    artifacts = [
+        # Service runtime
+        "org.jooq:jooq:3.19.15",
+
+        # Codegen tool (//tools/jooq only — not on service classpaths)
+        "org.jooq:jooq-codegen:3.19.15",
+        "org.jooq:jooq-meta:3.19.15",
+        "org.jooq:jooq-meta-extensions:3.19.15",
+
+        # SLF4J API (direct dep for services that log via SLF4J)
+        "org.slf4j:slf4j-api:2.0.13",
+
+        # Log4j 2 — used at codegen time (tools/jooq) and service runtime
+        "org.apache.logging.log4j:log4j-api:2.23.1",
+        "org.apache.logging.log4j:log4j-core:2.23.1",
+        "org.apache.logging.log4j:log4j-slf4j2-impl:2.23.1",
+        "org.apache.logging.log4j:log4j-layout-template-json:2.23.1",
+
+        # JUnit 5 — test API (compile) + engine/reporting (runtime via junit5_runner)
+        "org.junit.jupiter:junit-jupiter-api:5.11.3",
+        "org.junit.jupiter:junit-jupiter-engine:5.11.3",
+        "org.junit.platform:junit-platform-launcher:1.11.3",
+        "org.junit.platform:junit-platform-engine:1.11.3",
+        "org.junit.platform:junit-platform-commons:1.11.3",
+        "org.junit.platform:junit-platform-reporting:1.11.3",
+    ],
+    repositories = ["https://repo1.maven.org/maven2"],
+)
+use_repo(maven, "maven")

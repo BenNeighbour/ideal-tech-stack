@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_binary")
+
+java_binary(
+    name = "codegen_bin",
+    srcs = ["JooqCodegen.java"],
+    main_class = "JooqCodegen",
+    resources = ["log4j2.xml"],
+    resource_strip_prefix = "tools/jooq",
+    deps = [
+        "@maven//:org_jooq_jooq_codegen",
+        "@maven//:org_jooq_jooq_meta",
+        "@maven//:org_jooq_jooq_meta_extensions",
+        "@maven//:org_apache_logging_log4j_log4j_core",
+        "@maven//:org_apache_logging_log4j_log4j_slf4j2_impl",
+    ],
+    visibility = ["//visibility:public"],
+)

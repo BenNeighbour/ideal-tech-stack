@@ -1,0 +1,8 @@
+# Bazel output symlinks
+/bazel-*
+
+# Convenience symlinks often created by Bazel
+/bazel-bin
+/bazel-out
+/bazel-testlogs
+/bazel-code

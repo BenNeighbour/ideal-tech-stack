@@ -1,0 +1,41 @@
+load("@rules_java//java:defs.bzl", "java_binary", "java_library")
+load("//tools/jooq:jooq.bzl", "jooq_library")
+load("//tools/testing:junit5.bzl", "java_tests")
+
+jooq_library(
+    name = "db",
+    srcs = glob(["db/migrations/*.sql"]),
+    package = "com.example.db",
+)
+
+# Library target — depended on by both the binary and tests.
+java_library(
+    name = "example_service_lib",
+    srcs = glob(["src/main/java/**/*.java"]),
+    resources = glob(["src/main/resources/**"]),
+    resource_strip_prefix = "services/example-service/src/main/resources",
+    deps = [
+        ":db",
+        "@maven//:org_jooq_jooq",
+        "@maven//:org_slf4j_slf4j_api",
+        "@maven//:org_apache_logging_log4j_log4j_core",
+        "@maven//:org_apache_logging_log4j_log4j_slf4j2_impl",
+        "@maven//:org_apache_logging_log4j_log4j_layout_template_json",
+    ],
+)
+
+java_binary(
+    name = "example_service",
+    main_class = "com.example.Main",
+    runtime_deps = [":example_service_lib"],
+)
+
+# Drop a new test file in src/test/java/ and Bazel picks it up automatically.
+java_tests(
+    srcs = glob(["src/test/java/**/*.java"]),
+    deps = [
+        ":example_service_lib",
+        ":db",
+        "@maven//:org_jooq_jooq",
+    ],
+)
